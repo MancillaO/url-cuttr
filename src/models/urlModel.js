@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from 'mongodb'
+import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb'
 import { mongoUrl } from '#root/config.js'
 
 const client = new MongoClient(mongoUrl, {
@@ -12,7 +12,7 @@ const client = new MongoClient(mongoUrl, {
 async function connect () {
   try {
     await client.connect()
-    const database = client.db('url-cuttr')
+    const database = client.db('url_cuttr')
     return database.collection('urls')
   } catch (error) {
     console.error('Error connecting to MongoDB:', error)
@@ -20,7 +20,7 @@ async function connect () {
   }
 }
 
-const db = connect()
+const db = await connect()
 
 export class UrlModel {
   static async createUrl ({ url, code, description }) {
@@ -29,18 +29,30 @@ export class UrlModel {
       code,
       description,
       clicks: 0,
+      active: true,
       createdAt: new Date()
     }
     const result = await db.insertOne(urlDoc)
-    return result.insertedId
+    const newUrl = await this.getUrlById(result.insertedId)
+    return newUrl
   }
 
-  static async getUrls ({ url }) {
-    const query = {}
+  static async reactivateUrl (id) {
+    const result = await db.updateOne({ _id: new ObjectId(id) }, { $set: { active: true } })
+    return result
+  }
+
+  static async getUrls ({ url, active = true }) {
+    const query = { active }
     if (url) {
       query.url = url
     }
     const urls = await db.find(query).toArray()
     return urls
+  }
+
+  static async getUrlById (id) {
+    const url = await db.findOne({ _id: new ObjectId(id) })
+    return url
   }
 }
