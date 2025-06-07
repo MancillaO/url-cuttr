@@ -42,8 +42,8 @@ export class UrlModel {
     return result
   }
 
-  static async getUrls ({ url, active = true }) {
-    const query = { active }
+  static async getUrls ({ url }) {
+    const query = {}
     if (url) {
       query.url = url
     }

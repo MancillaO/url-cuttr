@@ -1,3 +1,4 @@
+import { UrlService } from '#services/urlService.js'
 import { UrlModel } from '#models/urlModel.js'
 
 export class UrlController {
@@ -11,18 +12,35 @@ export class UrlController {
     const cleanUrl = url.trim()
 
     try {
-      // Verificar si ya existe una URL activa con la misma dirección
-      const existingUrl = await UrlModel.getUrls({ url: cleanUrl })
-      if (existingUrl.length > 0 && existingUrl[0].active === true) {
-        return res.status(400).json({ error: 'La url ya existe' })
+      const validation = await UrlService.validateUrl(cleanUrl)
+
+      if (validation.exists && validation.isActive) {
+        return res.status(400).json({ error: 'La URL ya existe' })
       }
 
-      // Create new URL if no existing active or inactive URL found
-      const newUrl = await UrlModel.createUrl({ url: cleanUrl, code, description })
-      if (!newUrl) {
-        return res.status(500).json({ error: 'Error creating URL' })
+      if (validation.exists) {
+        await UrlModel.reactivateUrl(validation.urlData._id)
+        const reactivatedUrl = await UrlModel.getUrlById(validation.urlData._id)
+        return res.status(200).json({
+          message: 'URL reactivada exitosamente',
+          url: reactivatedUrl
+        })
       }
-      return res.status(201).json({ message: 'URL created successfully', url: newUrl })
+
+      const newUrl = await UrlModel.createUrl({
+        url: cleanUrl,
+        code,
+        description
+      })
+
+      if (!newUrl) {
+        return res.status(500).json({ error: 'Error al crear la URL' })
+      }
+
+      return res.status(201).json({
+        message: 'URL creada exitosamente',
+        url: newUrl
+      })
     } catch (error) {
       console.error('Error processing URL:', error)
       return res.status(500).json({ error: 'Internal server error' })

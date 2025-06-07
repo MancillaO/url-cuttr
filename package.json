@@ -16,7 +16,8 @@
     "#controllers/*": "./src/controllers/*",
     "#models/*": "./src/models/*",
     "#schemas/*": "./src/schemas/*",
-    "#utils/*": "./src/utils/*"
+    "#utils/*": "./src/utils/*",
+    "#services/*": "./src/services/*"
   },
   "keywords": [],
   "author": "omancilla",
