@@ -17,29 +17,23 @@ async function connect () {
   } catch (error) {
     console.error('Error connecting to MongoDB:', error)
     await client.close()
+    throw error
   }
 }
 
 const db = await connect()
 
 export class UrlModel {
-  static async createUrl ({ url, code, description }) {
+  static async createUrl ({ input }) {
     const urlDoc = {
-      url,
-      code,
-      description,
+      id_user: '',
+      ...input,
       clicks: 0,
-      active: true,
       createdAt: new Date()
     }
     const result = await db.insertOne(urlDoc)
     const newUrl = await this.getUrlById(result.insertedId)
     return newUrl
-  }
-
-  static async reactivateUrl (id) {
-    const result = await db.updateOne({ _id: new ObjectId(id) }, { $set: { active: true } })
-    return result
   }
 
   static async getUrls ({ url }) {
@@ -51,8 +45,21 @@ export class UrlModel {
     return urls
   }
 
-  static async getUrlById (id) {
+  static async getUrlById ({ id }) {
     const url = await db.findOne({ _id: new ObjectId(id) })
     return url
+  }
+
+  static async getUrlByCode ({ code }) {
+    const url = await db.findOne({ code })
+    return url
+  }
+
+  static async updateUrlClicks ({ id, clicks }) {
+    const result = await db.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { clicks } }
+    )
+    return result
   }
 }
